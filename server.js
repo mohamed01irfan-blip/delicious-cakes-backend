@@ -7,6 +7,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.get("/", (req, res) => {
+    res.send("🎂 Delicious Cakes Backend is Running Successfully!");
+});
 
 // 🔗 MongoDB Connection
 const MONGO_URL = "mongodb+srv://cakeadmin:mdirfan@cluster0.9zuekek.mongodb.net/delicious_cakes?retryWrites=true&w=majority";
