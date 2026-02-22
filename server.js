@@ -48,32 +48,32 @@ const orderSchema = new mongoose.Schema({
 
 // Model
 const Order = mongoose.model("Order", orderSchema);
-// 🎂 Cake Products (Static for Index Page)
+// 🎂 Cake Products (Static for Index + Order Page)
 app.get("/api/products", (req, res) => {
     const cakes = [
         {
             name: "Chocolate Truffle Cake",
             description: "Rich chocolate cake with creamy truffle layers.",
             price: 500,
-            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80"
+            image: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=600&q=80"
         },
         {
             name: "Black Forest Cake",
             description: "Delicious black forest cake with cherries & cream.",
             price: 450,
-            image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=600&q=80"
+            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80"
         },
         {
             name: "Red Velvet Cake",
             description: "Soft red velvet cake with cream cheese frosting.",
             price: 600,
-            image: "https://images.unsplash.com/photo-1605475128023-2f0b4b5c5f92?auto=format&fit=crop&w=600&q=80"
+            image: "https://images.unsplash.com/photo-1586788680434-30d324d2d46f?auto=format&fit=crop&w=600&q=80"
         },
         {
             name: "Butterscotch Cake",
             description: "Classic butterscotch flavor with crunchy toppings.",
             price: 400,
-            image: "https://images.unsplash.com/photo-1621303837174-89787a7d4729?auto=format&fit=crop&w=600&q=80"
+            image: "https://images.unsplash.com/photo-1599785209707-28d7b9e3a4a4?auto=format&fit=crop&w=600&q=80"
         }
     ];
 
