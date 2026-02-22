@@ -1,165 +1,127 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.get("/", (req, res) => {
-    res.send("🎂 Delicious Cakes Backend is Running Successfully!");
-});
 
-// 🔗 MongoDB Connection
-const MONGO_URL = "mongodb+srv://cakeadmin:mdirfan@cluster0.9zuekek.mongodb.net/delicious_cakes?retryWrites=true&w=majority";
+// 🔥 IMPORTANT: Your live backend URL (change only if needed)
+const BASE_URL = "https://delicious-cakes-backend.onrender.com";
 
-mongoose.connect(MONGO_URL)
-.then(() => {
-    console.log("✅ MongoDB Connected Successfully!");
-})
-.catch((err) => {
-    console.log("❌ MongoDB Connection Error:", err);
-});
+// ================= SERVE STATIC IMAGES =================
+app.use("/images", express.static(path.join(__dirname, "images")));
 
-// 📦 Order Schema (UPGRADED FOR ADMIN)
-const orderSchema = new mongoose.Schema({
-    name: String,
-    phone: String,
-    email: String,
-    cakeType: String,
-    location: String,
-    cakeKg: Number,
-    advanceAmount: Number,
-    paymentMethod: String,
-    paymentStatus: {
-        type: String,
-        default: "Advance Paid"
-    },
-    orderStatus: {
-        type: String,
-        default: "Pending" // 🔥 ADMIN WILL UPDATE THIS
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+// ================= PRODUCTS (ADMIN CAN LATER ADD DB) =================
+let products = [
+  {
+    _id: 1,
+    name: "Black Forest Cake",
+    price: 500,
+    category: "chocolate",
+    image: `${BASE_URL}/images/black-forest.jpg`,
+  },
+  {
+    _id: 2,
+    name: "Red Velvet Cake",
+    price: 600,
+    category: "premium",
+    image: `${BASE_URL}/images/red-velvet.jpg`,
+  },
+  {
+    _id: 3,
+    name: "Strawberry Cake",
+    price: 450,
+    category: "fruit",
+    image: `${BASE_URL}/images/strawberry.jpg`,
+  },
+  {
+    _id: 4,
+    name: "Vanilla Cake",
+    price: 400,
+    category: "basic",
+    image: `${BASE_URL}/images/vanilla.jpg`,
+  },
+];
 
-// Model
-const Order = mongoose.model("Order", orderSchema);
-// 🎂 Cake Products (Static for Index + Order Page)
+// ================= ORDERS STORAGE (TEMP - NO DB) =================
+let orders = [];
+
+// ================= GET ALL PRODUCTS =================
 app.get("/api/products", (req, res) => {
-    const cakes = [
-        {
-            name: "Chocolate Truffle Cake",
-            description: "Rich chocolate cake with creamy truffle layers.",
-            price: 500,
-            image: "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-            name: "Black Forest Cake",
-            description: "Delicious black forest cake with cherries & cream.",
-            price: 450,
-            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-            name: "Red Velvet Cake",
-            description: "Soft red velvet cake with cream cheese frosting.",
-            price: 600,
-            image: "https://images.unsplash.com/photo-1586788680434-30d324d2d46f?auto=format&fit=crop&w=600&q=80"
-        },
-        {
-            name: "Butterscotch Cake",
-            description: "Classic butterscotch flavor with crunchy toppings.",
-            price: 400,
-            image: "https://images.unsplash.com/photo-1599785209707-28d7b9e3a4a4?auto=format&fit=crop&w=600&q=80"
-        }
-    ];
-
-    res.json(cakes);
+  res.json(products);
 });
 
-// 🎂 API 1: Save Order (Customer)
-app.post("/order", async (req, res) => {
-    try {
-        const { name, phone, email, cakeType, location, cakeKg, paymentMethod } = req.body;
+// ================= ADD NEW PRODUCT (ADMIN FEATURE) =================
+app.post("/api/products", (req, res) => {
+  const { name, price, category, image } = req.body;
 
-        // 💰 Advance Amount Logic
-        let advanceAmount = 0;
-        if (cakeKg == 1) {
-            advanceAmount = 200;
-        } else if (cakeKg == 2) {
-            advanceAmount = 350;
-        } else {
-            advanceAmount = cakeKg * 200;
-        }
+  if (!name || !price) {
+    return res.status(400).json({ message: "Name and price required" });
+  }
 
-        const newOrder = new Order({
-            name,
-            phone,
-            email,
-            cakeType,
-            location,
-            cakeKg,
-            advanceAmount,
-            paymentMethod,
-            paymentStatus: "Advance Paid",
-            orderStatus: "Pending"
-        });
+  const newProduct = {
+    _id: products.length + 1,
+    name,
+    price,
+    category: category || "custom",
+    image: image || `${BASE_URL}/images/default.jpg`,
+  };
 
-        await newOrder.save();
-
-        res.json({
-            message: "Order Saved Successfully!",
-            advance: advanceAmount
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error saving order" });
-    }
+  products.push(newProduct);
+  res.status(201).json({
+    message: "Cake added successfully 🎂",
+    product: newProduct,
+  });
 });
 
-// 📊 API 2: View All Orders (Admin Dashboard)
-app.get("/orders", async (req, res) => {
-    try {
-        const orders = await Order.find().sort({ createdAt: -1 });
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching orders" });
-    }
+// ================= PLACE ORDER (VERY IMPORTANT) =================
+app.post("/api/orders", (req, res) => {
+  const order = {
+    _id: orders.length + 1,
+    ...req.body,
+    createdAt: new Date(),
+  };
+
+  orders.push(order);
+
+  res.status(201).json({
+    message: "Order stored successfully 🎉",
+    order: order,
+  });
 });
 
-// 🗑 API 3: Delete Order (Admin)
-app.delete("/orders/:id", async (req, res) => {
-    try {
-        await Order.findByIdAndDelete(req.params.id);
-        res.json({ message: "Order deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting order" });
-    }
+// ================= GET ALL ORDERS (ADMIN DASHBOARD) =================
+app.get("/api/orders", (req, res) => {
+  res.json(orders);
 });
 
-// 🔄 API 4: Update Order Status (Admin)
-app.put("/orders/:id", async (req, res) => {
-    try {
-        const { orderStatus } = req.body;
+// ================= UPDATE ORDER STATUS (ADMIN CONTROL) =================
+app.put("/api/orders/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const { orderStatus } = req.body;
 
-        const updatedOrder = await Order.findByIdAndUpdate(
-            req.params.id,
-            { orderStatus },
-            { new: true }
-        );
+  const order = orders.find(o => o._id === id);
 
-        res.json(updatedOrder);
-    } catch (error) {
-        res.status(500).json({ message: "Error updating status" });
-    }
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  order.orderStatus = orderStatus || order.orderStatus;
+
+  res.json({
+    message: "Order status updated",
+    order,
+  });
 });
 
-const PORT = process.env.PORT || 3000;
+// ================= TEST ROUTE =================
+app.get("/", (req, res) => {
+  res.send("🍰 Delicious Cakes Backend Running Successfully 🚀");
+});
 
+// ================= SERVER =================
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
