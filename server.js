@@ -1,81 +1,97 @@
 const express = require("express");
 const cors = require("cors");
-const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================= PRODUCTS DATABASE =================
-// NOTE: Use ONLINE image URLs (not /images/...)
+/* =========================
+   PRODUCTS (ONLINE IMAGES ONLY)
+========================= */
 let products = [
   {
-    _id: uuidv4(),
+    _id: "1",
     name: "Black Forest Cake",
     price: 500,
     category: "chocolate",
     image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587"
   },
   {
-    _id: uuidv4(),
+    _id: "2",
     name: "Red Velvet Cake",
     price: 600,
     category: "premium",
-    image: "https://images.unsplash.com/photo-1605478035137-6f6e4b1cd5df"
+    image: "https://images.unsplash.com/photo-1605478521525-1a9d4c3b0c5b"
   }
 ];
 
-// ================= ORDERS DATABASE =================
+/* =========================
+   ORDERS STORAGE (TEMP DB)
+========================= */
 let orders = [];
 
-// ================= PRODUCTS API =================
+/* =========================
+   PRODUCT ROUTES
+========================= */
 
-// GET all cakes (Customer Website)
+// Get all cakes
 app.get("/api/products", (req, res) => {
   res.json(products);
 });
 
-// ADD new cake (Admin Panel)
+// Add new cake (ADMIN)
 app.post("/api/products", (req, res) => {
   const { name, price, category, image } = req.body;
 
+  // 🔥 Force online image only
   if (!name || !price || !image) {
-    return res.status(400).json({ message: "Name, price and image URL required" });
+    return res.status(400).json({
+      message: "Name, Price & Online Image URL required"
+    });
+  }
+
+  // Reject offline image paths like /images/...
+  if (!image.startsWith("http")) {
+    return res.status(400).json({
+      message: "Only ONLINE image URLs allowed (https://...)"
+    });
   }
 
   const newProduct = {
-    _id: uuidv4(),
+    _id: Date.now().toString(),
     name,
     price,
-    category: category || "custom",
-    image // 🔥 Direct online image URL
+    category,
+    image // store full online URL
   };
 
   products.push(newProduct);
-  res.status(201).json(newProduct);
+  res.json({
+    message: "Cake added successfully",
+    product: newProduct
+  });
 });
 
-// DELETE cake
+// Delete cake
 app.delete("/api/products/:id", (req, res) => {
   products = products.filter(p => p._id !== req.params.id);
-  res.json({ message: "Cake deleted successfully" });
+  res.json({ message: "Cake deleted" });
 });
 
-// ================= ORDERS API (NEW - ADMIN DASHBOARD FIX) =================
+/* =========================
+   ORDER ROUTES
+========================= */
 
-// CREATE ORDER (Customer side)
-app.post("/api/orders", (req, res) => {
-  const {
-    name,
-    phone,
-    cakeType,
-    cakeKg,
-    location,
-    advanceAmount
-  } = req.body;
+// Place Order
+app.post("/orders", (req, res) => {
+  const { name, phone, cakeType, cakeKg, location, advanceAmount } = req.body;
+
+  if (!name || !phone || !cakeType) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
 
   const newOrder = {
-    _id: uuidv4(),
+    _id: Date.now().toString(),
     name,
     phone,
     cakeType,
@@ -83,41 +99,42 @@ app.post("/api/orders", (req, res) => {
     location,
     advanceAmount,
     orderStatus: "Pending",
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
   orders.push(newOrder);
-  res.status(201).json(newOrder);
+  res.json({ message: "Order placed successfully", order: newOrder });
 });
 
-// GET ALL ORDERS (Admin Dashboard)
+// Get all orders (ADMIN)
 app.get("/api/orders", (req, res) => {
   res.json(orders);
 });
 
-// UPDATE ORDER STATUS
+// Update order status
 app.put("/api/orders/:id", (req, res) => {
-  const { id } = req.params;
   const { orderStatus } = req.body;
 
-  const order = orders.find(o => o._id === id);
+  const order = orders.find(o => o._id === req.params.id);
   if (!order) {
     return res.status(404).json({ message: "Order not found" });
   }
 
   order.orderStatus = orderStatus || order.orderStatus;
-  res.json(order);
+  res.json({ message: "Order updated", order });
 });
 
-// DELETE ORDER (Admin)
+// Delete order
 app.delete("/api/orders/:id", (req, res) => {
   orders = orders.filter(o => o._id !== req.params.id);
-  res.json({ message: "Order deleted successfully" });
+  res.json({ message: "Order deleted" });
 });
 
-// TEST ROUTE
+/* =========================
+   TEST ROUTE
+========================= */
 app.get("/", (req, res) => {
-  res.send("🎂 Delicious Cakes Backend with Admin + Orders Running");
+  res.send("Backend is running successfully 🚀");
 });
 
 const PORT = process.env.PORT || 5000;
