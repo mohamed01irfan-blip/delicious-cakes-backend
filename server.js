@@ -83,7 +83,7 @@ app.delete("/api/products/:id", (req, res) => {
 ========================= */
 
 // Place Order
-app.post("/orders", (req, res) => {
+app.post("/api/orders", (req, res) => {
   const { name, phone, cakeType, cakeKg, location, advanceAmount } = req.body;
 
   if (!name || !phone || !cakeType) {
