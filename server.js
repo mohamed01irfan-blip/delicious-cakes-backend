@@ -84,9 +84,9 @@ app.delete("/api/products/:id", (req, res) => {
 
 // Place Order
 app.post("/api/orders", (req, res) => {
-  const { name, phone, cakeType, cakeKg, location, advanceAmount } = req.body;
+  const { name, phone, email, cakeType, cakeKg, location, advanceAmount } = req.body;
 
-  if (!name || !phone || !cakeType) {
+  if (!name || !phone || !cakeType || !cakeKg) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -94,6 +94,7 @@ app.post("/api/orders", (req, res) => {
     _id: Date.now().toString(),
     name,
     phone,
+    email, // ✅ added
     cakeType,
     cakeKg,
     location,
